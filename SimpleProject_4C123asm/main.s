@@ -3,43 +3,50 @@
 ; ===========================================
 ; IEEE to TNS Conversion (32 bit, big endian)
 ; ===========================================
-; - Michael Newman
-; - CS2400 Computer Organization 2
-; - HW5
-; - 10/4/18
+; :author: Michael Newman
+; :class: CS2400 Computer Organization 2
+; :assignment: HW5
+; :date: 10/4/18
 ;
 ; Designed to convert a IEEE single-persision floating point number to TNS
 ; single-persision floating point.
 ;
 ; Builds the TNS number by loading:
-;   
+;   r3 := sign
+;   r4 := fraction
+;   r5 := exponent
+; And then packing the values into r3.
+; ----------------------------------------------------------------------------
+
        AREA    |.text|, CODE, READONLY, ALIGN=2
        EXPORT  Start
-	;;IEEE to TNS conversion
-Start  BL   trans  
-       ADR  r0, TNS   ; Load address of TNS test
+
+Start  BL   begin     ; Branch to caluclate TNS value
+cmp    ADR  r0, TNS   ; Load address of TNS test
 	   LDR  r0, [r0]  ; Load TNS test
 	   CMP  r0, r3    ; Compare TNS tests & calculated TNS output
 	   B    .
 	
-trans  ADR	r0, IEEE  ; r0 := address of IEEE
+begin  ADR	r0, IEEE  ; r0 := address of IEEE
 	   LDR	r1,[r0]	  ; r1 := IEEE word
 	   
 sign   MOV  r6, #0x1            ; sign mask
-	   AND  r3, r1, r6, ROR #1  ; r3 = sign of the IEEE
+	   AND  r3, r1, r6, ROR #1  ; r3 := TNS sign
 	   
-exp	   ADR  r7, expMask   ; r7 = address of Exponent mask of IEEE
-	   LDR  r7, [r7]      ; load the mask in r7
-	   AND  r7, r1, r7    ; get the IEEE exponent in r7
+exp	   ADR  r7, expMask   ; r7 := address of exponent mask
+	   LDR  r7, [r7]      ; r7 := exponent mask
+	   AND  r7, r1, r7    ; r7 := unpacked exponent
 	   ROR  r7, #23       ; shift exponent to TNS location
-	   SUB  r7, r7, #127  ; get unbiased exponent
-	   ADD  r7, r7, #256  ; convert to TNS bias
-	   MOV  r5, r7        
-fra	   ADR  r7, fracMask
-	   LDR  r7, [r7]        ; r7 = fraction mask
-	   AND  r7, r7, r1      ; r7 = unpacked exponent
-	   MOV  r4, r7, LSL #8  ; shift to correct location
-comb   ORR  r3, r4
+	   SUB  r7, r7, #127  ; remove bias 127
+	   ADD  r7, r7, #256  ; add bias 256
+	   MOV  r5, r7        ; r5 := TNS exponent
+
+fra	   ADR  r7, fracMask    ; r7 := adddress of the fraction mask
+	   LDR  r7, [r7]        ; r7 := fraction mask
+	   AND  r7, r7, r1      ; r7 := unpacked exponent
+	   MOV  r4, r7, LSL #8  ; r4 := TNS fraction
+
+comb   ORR  r3, r4  ; pack
        ORR  r3, r5
 	   BX   lr
 
