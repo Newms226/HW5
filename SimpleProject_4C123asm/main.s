@@ -6,6 +6,7 @@ Start  BL   trans
        ADR  r0, TNS
 	   LDR  r0, [r0]
 	   CMP  r0, r3
+	   B    .
 	
 trans  ADR	r0, IEEE        ; r0 := address of IEEE
 	   LDR	r1,[r0]	        ; r1 := IEEE word
@@ -14,16 +15,17 @@ sign   MOV  r6, #0x1
 exp	   ADR  r7,expMask      ; r7 = address of Exponent mask of IEEE
 	   LDR  r7,[r7]         ; load the mask in r7
 	   AND  r7,r1,r7        ; get the IEEE exponent in r7
+	   ROR  r7, #23
 	   SUB  r7, r7, #127    ; get unbiased
 	   ADD  r7, r7, #256    ; convert to TNS bias
-	   ROR  r7, #24         ; shift to the correct location for TNS
+;	   ROR  r7, #24         ; shift to the correct location for TNS
 	   MOV  r5, r7          ; Currently: r3: sign bit, r5: exponent
 fra	   ADR  r7, fracMask
 	   LDR  r7, [r7]        ; r7 = fraction mask
 	   AND  r7, r7, r1      ; r7 = unpacked exponent
 	   MOV  r4, r7, LSL #8  ; shift to correct location
-comb   AND  r3, r4
-       AND  r3, r5
+comb   ORR  r3, r4
+       ORR  r3, r5
 	   BX   lr
 
 ;-----------------------------------DATA--------------------------------------
