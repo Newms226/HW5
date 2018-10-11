@@ -35,17 +35,17 @@ ARM Macro Assembler    Page 1
                                                             te the TNS value
    25 00000004 F000 F824       BL               TNStoIEEE   ; branch to calcula
                                                             te the IEEE value
-   26 00000008 A020            ADR              r0, TNS
+   26 00000008 A022            ADR              r0, TNS
    27 0000000A 6800            LDR              r0, [r0]
    28 0000000C 4581            CMP              r9, r0      ; check if IEEE to 
                                                             TNS worked
-   29 0000000E A01E            ADR              r0, IEEE
+   29 0000000E A020            ADR              r0, IEEE
    30 00000010 6800            LDR              r0, [r0]
    31 00000012 4580            CMP              r8, r0      ; check if the TNS 
                                                             to IEEE worked   
    32 00000014 E7FE            B                .
    33 00000016         
-   34 00000016 A01C    IEEEtoTNS
+   34 00000016 A01E    IEEEtoTNS
                                ADR              r0, IEEE    ; r0 := address of 
                                                             IEEE
    35 00000018 6801            LDR              r1,[r0]     ; r1 := IEEE word
@@ -55,7 +55,7 @@ ARM Macro Assembler    Page 1
    38 0000001E EA01 0376       AND              r3, r1, r6, ROR #1 
                                                             ; r3 := TNS sign
    39 00000022         
-   40 00000022 A71B    exp     ADR              r7, IEEEexpMask ; r7 := address
+   40 00000022 A71D    exp     ADR              r7, IEEEexpMask ; r7 := address
                                                              of exponent mask
    41 00000024 683F            LDR              r7, [r7]    ; r7 := exponent ma
                                                             sk
@@ -74,7 +74,7 @@ ARM Macro Assembler    Page 2
    46 00000036 463D            MOV              r5, r7      ; r5 := TNS exponen
                                                             t
    47 00000038         
-   48 00000038 A716    fra     ADR              r7, IEEEfracMask ; r7 := adddre
+   48 00000038 A718    fra     ADR              r7, IEEEfracMask ; r7 := adddre
                                                             ss of the fraction 
                                                             mask
    49 0000003A 683F            LDR              r7, [r7]    ; r7 := fraction ma
@@ -92,7 +92,7 @@ ARM Macro Assembler    Page 2
    57 00000050         
    58 00000050         ;--------------------------------TNS TO IEEE------------
                        ----------------------
-   59 00000050 A00E    TNStoIEEE
+   59 00000050 A010    TNStoIEEE
                                ADR              r0, TNS
    60 00000052 6800            LDR              r0, [r0]
    61 00000054         
@@ -100,74 +100,77 @@ ARM Macro Assembler    Page 2
                        sign2   MOV              r1, #0x1
    63 00000058 EA03 0371       AND              r3, r1, ROR #1
    64 0000005C         
-   65 0000005C A70E    exp2    ADR              r7, TNSexpMask ; address of the
+   65 0000005C A710    exp2    ADR              r7, TNSexpMask ; address of the
                                                              mask
    66 0000005E 683F            LDR              r7, [r7]    ; actual mask conte
                                                             nt
    67 00000060 EA07 0400       AND              r4, r7, r0  ; extract exponent 
                                                             bits
-   68 00000064 2CFE            CMP              r4, #254    ; test if exponent 
+   68 00000064 F5A4 7480       SUB              r4, #256    ; Remove base 256 b
+                                                            ias
+   69 00000068 2C7F            CMP              r4, #127    ; test if exponent 
                                                             can be put into IEE
                                                             E form
-   69 00000066 DA0D            BGE              error       ; if exponent is to
+   70 0000006A DA0F            BGE              error       ; if exponent is to
                                                             o big, branch to er
                                                             ror
-   70 00000068 EA4F 5444       LSL              r4, #21     ; shift exponent bi
+   71 0000006C F104 047F       ADD              r4, #127    ; add corret bias
+   72 00000070 EA4F 2474       ROR              r4, #9      ; shift exponent bi
                                                             ts to the right loc
                                                             ation
-   71 0000006C         
-   72 0000006C A70B    fra2    ADR              r7, TNSfracMask
-   73 0000006E 683F            LDR              r7, [r7]
-   74 00000070 EA00 0507       AND              r5, r0, r7  ; extract fraction 
+   73 00000074         
+   74 00000074 A70B    fra2    ADR              r7, TNSfracMask
+   75 00000076 683F            LDR              r7, [r7]
+   76 00000078 EA00 0507       AND              r5, r0, r7  ; extract fraction 
                                                             bits
-   75 00000074 EA4F 2535       ROR              r5, #8
-   76 00000078         
-   77 00000078 EA43 0304 
+   77 0000007C EA4F 2535       ROR              r5, #8
+   78 00000080         
+   79 00000080 EA43 0304 
                        comb2   ORR              r3, r4
-   78 0000007C EA43 0305       ORR              r3, r5
-   79 00000080 4698            MOV              r8, r3
-   80 00000082 4770            BX               lr
-   81 00000084         
+   80 00000084 EA43 0305       ORR              r3, r5
 
 
 
 ARM Macro Assembler    Page 3 
 
 
-   82 00000084         
-   83 00000084         
-   84 00000084         ;---------------------------------HELPER----------------
+   81 00000088 4698            MOV              r8, r3
+   82 0000008A 4770            BX               lr
+   83 0000008C         
+   84 0000008C         
+   85 0000008C         
+   86 0000008C         ;---------------------------------HELPER----------------
                        ----------------------
-   85 00000084 DF01    error   SWI              1
-   86 00000086 E7FE            B                .
-   87 00000088         
-   88 00000088         ;-----------------------------------DATA----------------
+   87 0000008C DF01    error   SWI              1
+   88 0000008E E7FE            B                .
+   89 00000090         
+   90 00000090         ;-----------------------------------DATA----------------
                        ----------------------
-   89 00000088 41640000 
+   91 00000090 41640000 
                        IEEE    DCD              0x41640000  ; IEEE Representati
                                                             on of 14.25(10)
-   90 0000008C 64000103 
+   92 00000094 64000103 
                        TNS     DCD              0x64000103  ; TNS  Representati
                                                             on of 14.25(10)
-   91 00000090 7F800000 
+   93 00000098 7F800000 
                        IEEEexpMask
                                DCD              0x7F800000  ; mask to get the I
                                                             EEE exponent bits
-   92 00000094 007FFFFE 
+   94 0000009C 007FFFFE 
                        IEEEfracMask
                                DCD              0x007FFFFE  ; mask to get the I
                                                             EEE fraction bits 
-   93 00000098         ; (w/o least sig)
-   94 00000098 000001FF 
+   95 000000A0         ; (w/o least sig)
+   96 000000A0 000001FF 
                        TNSexpMask
                                DCD              0x000001FF  ; mask to get the T
                                                             NS exponent bits
-   95 0000009C 7FFFFE00 
+   97 000000A4 7FFFFE00 
                        TNSfracMask
                                DCD              0x7FFFFE00  ; mask to get the T
                                                             NS fraction bits
-   96 000000A0                 ALIGN
-   97 000000A0                 END
+   98 000000A8                 ALIGN
+   99 000000A8                 END
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4 --apcs=interw
 ork --depend=.\main.d -o.\main.o -I.\RTE\_SimpleProject -IC:\Keil_v5\ARM\PACK\A
 RM\CMSIS\5.4.0\CMSIS\Core\Include -IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Dev
@@ -188,28 +191,28 @@ Symbol: .text
    Uses
       None
 Comment: .text unused
-IEEE 00000088
+IEEE 00000090
 
 Symbol: IEEE
    Definitions
-      At line 89 in file main.s
+      At line 91 in file main.s
    Uses
       At line 29 in file main.s
       At line 34 in file main.s
 
-IEEEexpMask 00000090
+IEEEexpMask 00000098
 
 Symbol: IEEEexpMask
    Definitions
-      At line 91 in file main.s
+      At line 93 in file main.s
    Uses
       At line 40 in file main.s
 Comment: IEEEexpMask used once
-IEEEfracMask 00000094
+IEEEfracMask 0000009C
 
 Symbol: IEEEfracMask
    Definitions
-      At line 92 in file main.s
+      At line 94 in file main.s
    Uses
       At line 48 in file main.s
 Comment: IEEEfracMask used once
@@ -229,16 +232,16 @@ Symbol: Start
    Uses
       At line 22 in file main.s
 Comment: Start used once
-TNS 0000008C
+TNS 00000094
 
 Symbol: TNS
    Definitions
-      At line 90 in file main.s
+      At line 92 in file main.s
    Uses
       At line 26 in file main.s
       At line 59 in file main.s
 
-TNSexpMask 00000098
+TNSexpMask 000000A0
 
 
 
@@ -248,17 +251,17 @@ Relocatable symbols
 
 Symbol: TNSexpMask
    Definitions
-      At line 94 in file main.s
+      At line 96 in file main.s
    Uses
       At line 65 in file main.s
 Comment: TNSexpMask used once
-TNSfracMask 0000009C
+TNSfracMask 000000A4
 
 Symbol: TNSfracMask
    Definitions
-      At line 95 in file main.s
+      At line 97 in file main.s
    Uses
-      At line 72 in file main.s
+      At line 74 in file main.s
 Comment: TNSfracMask used once
 TNStoIEEE 00000050
 
@@ -276,21 +279,21 @@ Symbol: comb
    Uses
       None
 Comment: comb unused
-comb2 00000078
+comb2 00000080
 
 Symbol: comb2
    Definitions
-      At line 77 in file main.s
+      At line 79 in file main.s
    Uses
       None
 Comment: comb2 unused
-error 00000084
+error 0000008C
 
 Symbol: error
    Definitions
-      At line 85 in file main.s
+      At line 87 in file main.s
    Uses
-      At line 69 in file main.s
+      At line 70 in file main.s
 Comment: error used once
 exp 00000022
 
@@ -322,11 +325,11 @@ Symbol: fra
    Uses
       None
 Comment: fra unused
-fra2 0000006C
+fra2 00000074
 
 Symbol: fra2
    Definitions
-      At line 72 in file main.s
+      At line 74 in file main.s
    Uses
       None
 Comment: fra2 unused

@@ -65,9 +65,11 @@ sign2      MOV r1, #0x1
 exp2       ADR r7, TNSexpMask  ; address of the mask
            LDR r7, [r7]        ; actual mask content
 		   AND r4, r7, r0      ; extract exponent bits
-		   CMP r4, #254        ; test if exponent can be put into IEEE form
+		   SUB r4, #256        ; Remove base 256 bias
+		   CMP r4, #127        ; test if exponent can be put into IEEE form
 	       BGE error           ; if exponent is too big, branch to error
-		   LSL r4, #21         ; shift exponent bits to the right location
+		   ADD r4, #127        ; add corret bias
+		   ROR r4, #9          ; shift exponent bits to the right location
 		   
 fra2       ADR r7, TNSfracMask
            LDR r7, [r7]
